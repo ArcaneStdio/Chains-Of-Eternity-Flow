@@ -1,0 +1,185 @@
+{
+    "f_type": "InteractionTemplate",
+    "f_version": "1.1.0",
+    "id": "59472f8ffc10803d27c8b6dfb759d644c59233b4176771be86e4535b96de137e",
+    "data": {
+        "type": "transaction",
+        "interface": "",
+        "messages": null,
+        "cadence": {
+            "body": "import \"ItemManager\"\r\nimport \"NonFungibleToken\"\r\n\r\ntransaction {\r\n\r\n    prepare(signer: auth(BorrowValue, IssueStorageCapabilityController, PublishCapability, SaveValue, UnpublishCapability) \u0026Account) {\r\n\r\n        // Return early if the account already has a collection\r\n        if signer.storage.borrow\u003c\u0026ItemManager.Collection\u003e(from: ItemManager.CollectionStoragePath) != nil {\r\n            return\r\n        }\r\n\r\n        // Create a new empty collection\r\n        let collection \u003c- ItemManager.createEmptyCollection(nftType: Type\u003c@ItemManager.NFT\u003e())\r\n\r\n        // save it to the account\r\n        signer.storage.save(\u003c-collection, to: ItemManager.CollectionStoragePath)\r\n\r\n        let collectionCap = signer.capabilities.storage.issue\u003c\u0026ItemManager.Collection\u003e(ItemManager.CollectionStoragePath)\r\n        signer.capabilities.publish(collectionCap, at: ItemManager.CollectionPublicPath)\r\n    }\r\n}\r\n",
+            "network_pins": [
+                {
+                    "network": "mainnet",
+                    "pin_self": "13fbfeda68476f84d0098fd14434bba07e4eb9e16e1e603340322f74121dc339"
+                },
+                {
+                    "network": "testnet",
+                    "pin_self": "ce7206e956d5faa29a88f6cdc5999d853bf94b5fad55a03f6231d3f238077f44"
+                }
+            ]
+        },
+        "dependencies": [
+            {
+                "contracts": [
+                    {
+                        "contract": "ItemManager",
+                        "networks": [
+                            {
+                                "network": "emulator",
+                                "address": "0xf8d6e0586b0a20c7",
+                                "dependency_pin_block_height": 0
+                            },
+                            {
+                                "network": "testnet",
+                                "address": "0x464be375643b8791",
+                                "dependency_pin_block_height": 277161899,
+                                "dependency_pin": {
+                                    "pin": "9710492d92a24a641a67769f7e74d43aaf2d555f2c30c6870019006f6a79b437",
+                                    "pin_self": "8373873c9e84ef846497e2a8c4d334dd833bbce28214c2136e504cf37c2549f4",
+                                    "pin_contract_name": "ItemManager",
+                                    "pin_contract_address": "0x464be375643b8791",
+                                    "imports": [
+                                        {
+                                            "pin": "75f86d7c1921dbfa2ab796b818a4afea1cc59e814801556b6505c9d1124d0c4e",
+                                            "pin_self": "9cb93cec045c90cf14d2b6b9770a919b728b9e5b9bc0a23a3b999d63dc1fd7ab",
+                                            "pin_contract_name": "NonFungibleToken",
+                                            "pin_contract_address": "0x631e88ae7f1d7c20",
+                                            "imports": [
+                                                {
+                                                    "pin": "79e92db336f6cc98eb75c2153a706ec75491d64bf097439fb157d49edd5e5c2d",
+                                                    "pin_self": "de0788963b97da19cdb0f1d94211375522eac039013324b876290a95ff3c7c56",
+                                                    "pin_contract_name": "ViewResolver",
+                                                    "pin_contract_address": "0x631e88ae7f1d7c20",
+                                                    "imports": []
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "pin": "d20e737306dcd6383d92e7c6b91d76f53c60e3fd8ebacc258dd48df4905aa7f5",
+                                            "pin_self": "aa51df4f52d819c7fa4377d4316f792a0cd3cee14377b794e305303f420b5696",
+                                            "pin_contract_name": "MetadataViews",
+                                            "pin_contract_address": "0x631e88ae7f1d7c20",
+                                            "imports": [
+                                                {
+                                                    "pin": "312eda91fa1b04517fc9cb8204b9885e18a1263ca9ba60bed45343bf0bab00bb",
+                                                    "pin_self": "6b1226cc283606b660002c52aa71187d6896524a8ff62f06cedaef348b26ff9a",
+                                                    "pin_contract_name": "FungibleToken",
+                                                    "pin_contract_address": "0x9a0766d93b6608b7",
+                                                    "imports": [
+                                                        {
+                                                            "pin": "79e92db336f6cc98eb75c2153a706ec75491d64bf097439fb157d49edd5e5c2d",
+                                                            "pin_self": "de0788963b97da19cdb0f1d94211375522eac039013324b876290a95ff3c7c56",
+                                                            "pin_contract_name": "ViewResolver",
+                                                            "pin_contract_address": "0x631e88ae7f1d7c20",
+                                                            "imports": []
+                                                        },
+                                                        {
+                                                            "pin": "fdf38f744b1cccbff5682a29a51efe62d3a596c40784491629cd2a037eed2ba8",
+                                                            "pin_self": "b230a59e4f9f68ce0c06977a1cb38e7f560a843054602143f81c533cebf72aa7",
+                                                            "pin_contract_name": "Burner",
+                                                            "pin_contract_address": "0x9a0766d93b6608b7",
+                                                            "imports": []
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "pin": "79e92db336f6cc98eb75c2153a706ec75491d64bf097439fb157d49edd5e5c2d",
+                                                    "pin_self": "de0788963b97da19cdb0f1d94211375522eac039013324b876290a95ff3c7c56",
+                                                    "pin_contract_name": "ViewResolver",
+                                                    "pin_contract_address": "0x631e88ae7f1d7c20",
+                                                    "imports": []
+                                                },
+                                                {
+                                                    "pin": "79e92db336f6cc98eb75c2153a706ec75491d64bf097439fb157d49edd5e5c2d",
+                                                    "pin_self": "de0788963b97da19cdb0f1d94211375522eac039013324b876290a95ff3c7c56",
+                                                    "pin_contract_name": "ViewResolver",
+                                                    "pin_contract_address": "0x631e88ae7f1d7c20",
+                                                    "imports": []
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "pin": "79e92db336f6cc98eb75c2153a706ec75491d64bf097439fb157d49edd5e5c2d",
+                                            "pin_self": "de0788963b97da19cdb0f1d94211375522eac039013324b876290a95ff3c7c56",
+                                            "pin_contract_name": "ViewResolver",
+                                            "pin_contract_address": "0x631e88ae7f1d7c20",
+                                            "imports": []
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "network": "mainnet",
+                                "address": "0x1d7e57aa55817448",
+                                "dependency_pin_block_height": 124656726,
+                                "dependency_pin": {
+                                    "pin": "42012470e20e90036b3098da71e1056ce0e561031bc41fa47faa1d1269f93a2e",
+                                    "pin_self": "a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a",
+                                    "pin_contract_name": "ItemManager",
+                                    "pin_contract_address": "0x1d7e57aa55817448",
+                                    "imports": []
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "contracts": [
+                    {
+                        "contract": "NonFungibleToken",
+                        "networks": [
+                            {
+                                "network": "emulator",
+                                "address": "0xf8d6e0586b0a20c7",
+                                "dependency_pin_block_height": 0
+                            },
+                            {
+                                "network": "mainnet",
+                                "address": "0x1d7e57aa55817448",
+                                "dependency_pin_block_height": 124656728,
+                                "dependency_pin": {
+                                    "pin": "339ff99ae80a9dd29b63159370cbcf1b49df180d542e2112b919f101d4868250",
+                                    "pin_self": "7be4dfd48c33667f914515bc38b679de5d75cb7dd55deef724bfead15e89e66a",
+                                    "pin_contract_name": "NonFungibleToken",
+                                    "pin_contract_address": "0x1d7e57aa55817448",
+                                    "imports": [
+                                        {
+                                            "pin": "79e92db336f6cc98eb75c2153a706ec75491d64bf097439fb157d49edd5e5c2d",
+                                            "pin_self": "de0788963b97da19cdb0f1d94211375522eac039013324b876290a95ff3c7c56",
+                                            "pin_contract_name": "ViewResolver",
+                                            "pin_contract_address": "0x1d7e57aa55817448",
+                                            "imports": []
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "network": "testnet",
+                                "address": "0x631e88ae7f1d7c20",
+                                "dependency_pin_block_height": 277161921,
+                                "dependency_pin": {
+                                    "pin": "75f86d7c1921dbfa2ab796b818a4afea1cc59e814801556b6505c9d1124d0c4e",
+                                    "pin_self": "9cb93cec045c90cf14d2b6b9770a919b728b9e5b9bc0a23a3b999d63dc1fd7ab",
+                                    "pin_contract_name": "NonFungibleToken",
+                                    "pin_contract_address": "0x631e88ae7f1d7c20",
+                                    "imports": [
+                                        {
+                                            "pin": "79e92db336f6cc98eb75c2153a706ec75491d64bf097439fb157d49edd5e5c2d",
+                                            "pin_self": "de0788963b97da19cdb0f1d94211375522eac039013324b876290a95ff3c7c56",
+                                            "pin_contract_name": "ViewResolver",
+                                            "pin_contract_address": "0x631e88ae7f1d7c20",
+                                            "imports": []
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "parameters": null
+    }
+}

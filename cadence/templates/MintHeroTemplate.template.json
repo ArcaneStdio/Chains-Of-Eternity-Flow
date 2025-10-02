@@ -1,0 +1,192 @@
+{
+    "f_type": "InteractionTemplate",
+    "f_version": "1.1.0",
+    "id": "1ffebf1b77088884ddaf819a587b70f3c241061d139eda5ab647ea514e6f5b0e",
+    "data": {
+        "type": "transaction",
+        "interface": "",
+        "messages": null,
+        "cadence": {
+            "body": "import \"HeroNFT\"\r\nimport \"NonFungibleToken\"\r\n\r\ntransaction(\r\n    recipient: Address\r\n)\r\n{\r\n    /// local variable for storing the minter reference\r\n    let minter: \u0026HeroNFT.NFTMinter\r\n    /// Reference to the receiver's collection\r\n    let recipientCollectionRef: \u0026{NonFungibleToken.Receiver}\r\n    prepare(signer: auth(BorrowValue) \u0026Account) \r\n    {\r\n        // borrow a reference to the NFTMinter resource in storage\r\n        self.minter = signer.storage.borrow\u003c\u0026HeroNFT.NFTMinter\u003e(from: HeroNFT.MinterStoragePath)\r\n        ?? panic(\"The signer does not store a HeroNFT Collection object at the path \"\r\n        .concat(HeroNFT.CollectionStoragePath.toString())\r\n        .concat(\"The signer must initialize their account with this collection first!\"))\r\n\r\n        // Borrow the recipient's public NFT collection reference\r\n        self.recipientCollectionRef = getAccount(recipient).capabilities.borrow\u003c\u0026{NonFungibleToken.Receiver}\u003e(\r\n            HeroNFT.CollectionPublicPath\r\n        ) ?? panic(\"The account \".concat(recipient.toString()).concat(\" does not have a NonFungibleToken Receiver at \")\r\n        .concat(HeroNFT.CollectionPublicPath.toString())\r\n        .concat(\". The account must initialize their account with this collection first!\"))\r\n    }\r\n    execute \r\n    {\r\n        let id = HeroNFT.totalSupply\r\n        // Mint the NFT and deposit it to the recipient's collection\r\n        let offensiveStats = HeroNFT.OffensiveStats(\r\n            damage: 10,\r\n            attackSpeed: 1,\r\n            criticalRate: 5,\r\n            criticalDamage: 50\r\n        )\r\n        let defensiveStats = HeroNFT.DefensiveStats(\r\n            maxHealth: 100,\r\n            defense: 10,\r\n            healthRegeneration: 5,\r\n            resistances: [1, 2, 3]\r\n        )\r\n        let specialStats = HeroNFT.SpecialStats(\r\n            maxEnergy: 50,\r\n            energyRegeneration: 5,\r\n            maxMana: 50,\r\n            manaRegeneration: 5\r\n        )\r\n        let statPointsAssigned = HeroNFT.StatPointsAssigned(\r\n            constitution: 10,\r\n            strength: 10,\r\n            dexterity: 10,\r\n            intelligence: 10,\r\n            stamina: 10,\r\n            agility: 10,\r\n            remainingPoints: 0\r\n        )\r\n        let stats = HeroNFT.Stats(\r\n            offensiveStats: offensiveStats,\r\n            defensiveStats: defensiveStats,\r\n            specialStats: specialStats,\r\n            statPointsAssigned: statPointsAssigned\r\n        )\r\n        let mintedNFT \u003c- self.minter.createNFT(\r\n            id: id,\r\n            playerName: \"Test Hero\",\r\n            playerID: \"test123\",\r\n            level: 1,\r\n            isBanned: false,\r\n            raceName: \"Human\",\r\n            equippedItems: [],\r\n            stats: stats,\r\n            imgURL: nil\r\n        )\r\n        self.recipientCollectionRef.deposit(token: \u003c-mintedNFT)\r\n    }\r\n}",
+            "network_pins": [
+                {
+                    "network": "mainnet",
+                    "pin_self": "720681c1d93f9400c429f718e7b24b998aa4f53ebc363854889e9d5eec767d22"
+                },
+                {
+                    "network": "testnet",
+                    "pin_self": "4d78cc50d37a70907cd70f4b297cb3f4022750c9f30477bf3241a14fbd671d2a"
+                }
+            ]
+        },
+        "dependencies": [
+            {
+                "contracts": [
+                    {
+                        "contract": "HeroNFT",
+                        "networks": [
+                            {
+                                "network": "emulator",
+                                "address": "0xf8d6e0586b0a20c7",
+                                "dependency_pin_block_height": 0
+                            },
+                            {
+                                "network": "mainnet",
+                                "address": "0x1d7e57aa55817448",
+                                "dependency_pin_block_height": 124656505,
+                                "dependency_pin": {
+                                    "pin": "42012470e20e90036b3098da71e1056ce0e561031bc41fa47faa1d1269f93a2e",
+                                    "pin_self": "a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a",
+                                    "pin_contract_name": "HeroNFT",
+                                    "pin_contract_address": "0x1d7e57aa55817448",
+                                    "imports": []
+                                }
+                            },
+                            {
+                                "network": "testnet",
+                                "address": "0x350ca9f549f3afd6",
+                                "dependency_pin_block_height": 277161563,
+                                "dependency_pin": {
+                                    "pin": "04772c9e98d87ba1bd8da9d206ebfc984b1c7cfd68b4d86710af5a20dda39cce",
+                                    "pin_self": "4d3ff805d9c39635963d52f8949d05fde33f263cae3e48c0d0e18145a0236b22",
+                                    "pin_contract_name": "HeroNFT",
+                                    "pin_contract_address": "0x350ca9f549f3afd6",
+                                    "imports": [
+                                        {
+                                            "pin": "75f86d7c1921dbfa2ab796b818a4afea1cc59e814801556b6505c9d1124d0c4e",
+                                            "pin_self": "9cb93cec045c90cf14d2b6b9770a919b728b9e5b9bc0a23a3b999d63dc1fd7ab",
+                                            "pin_contract_name": "NonFungibleToken",
+                                            "pin_contract_address": "0x631e88ae7f1d7c20",
+                                            "imports": [
+                                                {
+                                                    "pin": "79e92db336f6cc98eb75c2153a706ec75491d64bf097439fb157d49edd5e5c2d",
+                                                    "pin_self": "de0788963b97da19cdb0f1d94211375522eac039013324b876290a95ff3c7c56",
+                                                    "pin_contract_name": "ViewResolver",
+                                                    "pin_contract_address": "0x631e88ae7f1d7c20",
+                                                    "imports": []
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "pin": "d20e737306dcd6383d92e7c6b91d76f53c60e3fd8ebacc258dd48df4905aa7f5",
+                                            "pin_self": "aa51df4f52d819c7fa4377d4316f792a0cd3cee14377b794e305303f420b5696",
+                                            "pin_contract_name": "MetadataViews",
+                                            "pin_contract_address": "0x631e88ae7f1d7c20",
+                                            "imports": [
+                                                {
+                                                    "pin": "312eda91fa1b04517fc9cb8204b9885e18a1263ca9ba60bed45343bf0bab00bb",
+                                                    "pin_self": "6b1226cc283606b660002c52aa71187d6896524a8ff62f06cedaef348b26ff9a",
+                                                    "pin_contract_name": "FungibleToken",
+                                                    "pin_contract_address": "0x9a0766d93b6608b7",
+                                                    "imports": [
+                                                        {
+                                                            "pin": "79e92db336f6cc98eb75c2153a706ec75491d64bf097439fb157d49edd5e5c2d",
+                                                            "pin_self": "de0788963b97da19cdb0f1d94211375522eac039013324b876290a95ff3c7c56",
+                                                            "pin_contract_name": "ViewResolver",
+                                                            "pin_contract_address": "0x631e88ae7f1d7c20",
+                                                            "imports": []
+                                                        },
+                                                        {
+                                                            "pin": "fdf38f744b1cccbff5682a29a51efe62d3a596c40784491629cd2a037eed2ba8",
+                                                            "pin_self": "b230a59e4f9f68ce0c06977a1cb38e7f560a843054602143f81c533cebf72aa7",
+                                                            "pin_contract_name": "Burner",
+                                                            "pin_contract_address": "0x9a0766d93b6608b7",
+                                                            "imports": []
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "pin": "79e92db336f6cc98eb75c2153a706ec75491d64bf097439fb157d49edd5e5c2d",
+                                                    "pin_self": "de0788963b97da19cdb0f1d94211375522eac039013324b876290a95ff3c7c56",
+                                                    "pin_contract_name": "ViewResolver",
+                                                    "pin_contract_address": "0x631e88ae7f1d7c20",
+                                                    "imports": []
+                                                },
+                                                {
+                                                    "pin": "79e92db336f6cc98eb75c2153a706ec75491d64bf097439fb157d49edd5e5c2d",
+                                                    "pin_self": "de0788963b97da19cdb0f1d94211375522eac039013324b876290a95ff3c7c56",
+                                                    "pin_contract_name": "ViewResolver",
+                                                    "pin_contract_address": "0x631e88ae7f1d7c20",
+                                                    "imports": []
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "pin": "79e92db336f6cc98eb75c2153a706ec75491d64bf097439fb157d49edd5e5c2d",
+                                            "pin_self": "de0788963b97da19cdb0f1d94211375522eac039013324b876290a95ff3c7c56",
+                                            "pin_contract_name": "ViewResolver",
+                                            "pin_contract_address": "0x631e88ae7f1d7c20",
+                                            "imports": []
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "contracts": [
+                    {
+                        "contract": "NonFungibleToken",
+                        "networks": [
+                            {
+                                "network": "testnet",
+                                "address": "0x631e88ae7f1d7c20",
+                                "dependency_pin_block_height": 277161575,
+                                "dependency_pin": {
+                                    "pin": "75f86d7c1921dbfa2ab796b818a4afea1cc59e814801556b6505c9d1124d0c4e",
+                                    "pin_self": "9cb93cec045c90cf14d2b6b9770a919b728b9e5b9bc0a23a3b999d63dc1fd7ab",
+                                    "pin_contract_name": "NonFungibleToken",
+                                    "pin_contract_address": "0x631e88ae7f1d7c20",
+                                    "imports": [
+                                        {
+                                            "pin": "79e92db336f6cc98eb75c2153a706ec75491d64bf097439fb157d49edd5e5c2d",
+                                            "pin_self": "de0788963b97da19cdb0f1d94211375522eac039013324b876290a95ff3c7c56",
+                                            "pin_contract_name": "ViewResolver",
+                                            "pin_contract_address": "0x631e88ae7f1d7c20",
+                                            "imports": []
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "network": "emulator",
+                                "address": "0xf8d6e0586b0a20c7",
+                                "dependency_pin_block_height": 0
+                            },
+                            {
+                                "network": "mainnet",
+                                "address": "0x1d7e57aa55817448",
+                                "dependency_pin_block_height": 124656517,
+                                "dependency_pin": {
+                                    "pin": "339ff99ae80a9dd29b63159370cbcf1b49df180d542e2112b919f101d4868250",
+                                    "pin_self": "7be4dfd48c33667f914515bc38b679de5d75cb7dd55deef724bfead15e89e66a",
+                                    "pin_contract_name": "NonFungibleToken",
+                                    "pin_contract_address": "0x1d7e57aa55817448",
+                                    "imports": [
+                                        {
+                                            "pin": "79e92db336f6cc98eb75c2153a706ec75491d64bf097439fb157d49edd5e5c2d",
+                                            "pin_self": "de0788963b97da19cdb0f1d94211375522eac039013324b876290a95ff3c7c56",
+                                            "pin_contract_name": "ViewResolver",
+                                            "pin_contract_address": "0x1d7e57aa55817448",
+                                            "imports": []
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "parameters": [
+            {
+                "label": "recipient",
+                "index": 0,
+                "type": "Address",
+                "messages": []
+            }
+        ]
+    }
+}
