@@ -1,0 +1,31 @@
+# flow
+emulator-account.pkey
+.env
+
+# Pay attention to imports directory
+!imports
+testnet.pkey
+testnet-2.pkey
+testnet-3.pkey
+testnet-4.pkey
+testenet2.pkey
+testnet3.pkey
+testnet-99.pkey
+newItemManagerHolder.pkey
+testnet6969.pkey
+nftholder1.pkey
+Imholder0.pkey
+nftholder2.pkey
+nftHolder_coll_0501.pkey
+itemNFTHolder_464b.pkey
+testnet-70.pkey
+testnet-464be375643b8791.pkey
+testnet-1-0x464be375643b8791.pkey
+dhruvi2.pkey
+Dhruvi3.pkey
+dhruvi4.pkey
+unityAccount.pkey
+unity2.pkey
+allContractsHolder.pkey
+testnetestnet.pkey
+dhruvi.pkey
