@@ -1,4 +1,7 @@
 import RandomConsumer from 0xed24dbe901028c5c
+import Burner from 0x294e44e1ec6993c6
+import FlowToken from 0x7e60df042a9c0868
+import FungibleToken from 0x9a0766d93b6608b7
 
 access(all) contract RandomPicker {
     /// The RandomConsumer.Consumer resource used to request & fulfill randomness

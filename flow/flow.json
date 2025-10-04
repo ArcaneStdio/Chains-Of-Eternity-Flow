@@ -34,6 +34,12 @@
 				"testnet": "c6e616f1e50fcfab"
 			}
 		},
+		"ItemBurner": {
+			"source": "cadence/contracts/ItemBurner.cdc",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7"
+			}
+		},
 		"ItemManager": {
 			"source": "cadence/contracts/ItemManager.cdc",
 			"aliases": {
@@ -137,6 +143,10 @@
 			"address": "179b6b1cb6755e31",
 			"key": "7ed820fb1ba4ffe29d6b9f2c0ce2a9699e39850e56118fa3a4ffc8b47d8e9d8d"
 		},
+		"emulator-2": {
+			"address": "179b6b1cb6755e31",
+			"key": "95df1a5f6e05154cd96ee5173a8c3ce09d1adf5919bae4710f14beac489c9c48"
+		},
 		"emulator-account": {
 			"address": "f8d6e0586b0a20c7",
 			"key": {
@@ -165,22 +175,10 @@
 	},
 	"deployments": {
 		"emulator": {
-			"allContractsHolder": [
-				"HeroManager"
-			],
 			"emulator-account": [
 				"ItemManager",
-				{
-					"name": "MarketPlace2",
-					"args": [
-						{
-							"value": "0.20000000",
-							"type": "UFix64"
-						}
-					]
-				},
 				"Arcane",
-				"RewardCronTransactionHandler"
+				"ItemBurner"
 			]
 		},
 		"testnet": {
