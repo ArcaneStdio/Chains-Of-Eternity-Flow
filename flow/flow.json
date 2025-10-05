@@ -27,6 +27,34 @@
 				"testnet": "631e88ae7f1d7c20"
 			}
 		},
+		"GuildDAO": {
+			"source": "cadence/contracts/guild/GuildDAO.cdc",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"testnet": "c6e616f1e50fcfab"
+			}
+		},
+		"GuildInterfaces": {
+			"source": "cadence/contracts/guild/GuildInterfaces.cdc",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"testnet": "c6e616f1e50fcfab"
+			}
+		},
+		"GuildManager": {
+			"source": "cadence/contracts/guild/GuildManager.cdc",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"testnet": "c6e616f1e50fcfab"
+			}
+		},
+		"GuildNFT": {
+			"source": "cadence/contracts/guild/GuildNFT.cdc",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"testnet": "c6e616f1e50fcfab"
+			}
+		},
 		"HeroManager": {
 			"source": "cadence/contracts/HeroManager.cdc",
 			"aliases": {
@@ -178,7 +206,11 @@
 			"emulator-account": [
 				"ItemManager",
 				"Arcane",
-				"ItemBurner"
+				"ItemBurner",
+				"GuildInterfaces",
+				"GuildNFT",
+				"GuildDAO",
+				"GuildManager"
 			]
 		},
 		"testnet": {
