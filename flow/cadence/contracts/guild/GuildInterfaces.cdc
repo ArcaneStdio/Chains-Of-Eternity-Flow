@@ -82,19 +82,35 @@ access(all) contract GuildInterfaces {
         }
 
         access(all) fun updateStatus() {
-            if self.status != ProposalStatus.active { return }
+            // Do nothing if the proposal is already decided
+            if self.status != ProposalStatus.active {
+                log("Proposal is already decided")
+                return
+            }
+
+            // --- ADD THIS CHECK ---
+            // Only update the status if the voting period has actually ended.
             if getCurrentBlock().timestamp > self.votingEndTime {
                 if self.votesFor > self.votesAgainst {
                     self.status = ProposalStatus.succeeded
+                    log("Proposal succeeded")
                 } else {
                     self.status = ProposalStatus.defeated
+                    log("Proposal defeated")
                 }
+            }else {
+                log("Voting period is still active; cannot update status yet.")
             }
         }
 
         access(all) fun markExecuted() {
-            pre { self.status == ProposalStatus.succeeded: "Only succeeded proposals can be executed." }
+            log("marking executed")
             self.status = ProposalStatus.executed
+            return
+        }
+
+        access(all) fun getParameters(): {String: AnyStruct} {
+            return self.parameters
         }
     }
     access(all) resource interface Executor { access(all) fun executeDao(guildID: UInt64, proposalType: ProposalType, parameters: {String: AnyStruct}) }

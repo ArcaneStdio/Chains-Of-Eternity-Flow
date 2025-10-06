@@ -29,20 +29,25 @@ access(all) contract GuildManager {
             
             // CORRECTED: Borrow the admin resource directly from storage.
             // This is secure because only code in this account can access its own storage.
+            log("Borrowing GuildNFT Admin resource")
             let nftAdmin = GuildManager.account.storage.borrow<&GuildNFT.Admin>(from: /storage/GuildNFTAdmin)
                 ?? panic("Could not borrow GuildNFT Admin resource")
-
+            log("Borrowed GuildNFT Admin resource")
             switch proposalType {
                 case GuildInterfaces.ProposalType.addMember:
+                    log("Executing: Add member")
+                    log(parameters)
                     let memberAddress = parameters["memberAddress"] as! Address
+                    log("lmao")
                     let ownership = parameters["ownership"] as! UFix64
+                    log("found ownership")
                     nftAdmin.addMember(
                         ownerAddress: guildInfo.owner,
                         nftID: guildInfo.nftID,
                         memberAddress: memberAddress,
                         ownership: ownership
                     )
-                    log("Executed: Add member ".concat(memberAddress.toString()))
+                    log("Executed: Add member ")
                 case GuildInterfaces.ProposalType.kickMember:
                     let memberAddress = parameters["memberAddress"] as! Address
                     nftAdmin.removeMember(
@@ -54,8 +59,10 @@ access(all) contract GuildManager {
                 case GuildInterfaces.ProposalType.purchasePerk:
                     log("Executed: Purchase perk")
                 default:
+                    log("Unhandled proposal type")
                     panic("Unhandled proposal type")
             }
+            log("executed asdasd ")
         }
     }
 

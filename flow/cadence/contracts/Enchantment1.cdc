@@ -1,7 +1,7 @@
 import MetadataViews from 0xf8d6e0586b0a20c7 
 import FungibleTokenMetadataViews from 0xee82856bf20e2aa6 
 
-access(all) contract Arcane: FungibleToken 
+access(all) contract ExpToken: FungibleToken 
 { 
   access(all) let VaultStoragePath: StoragePath 
   access(all) let VaultPublicPath: PublicPath 
@@ -51,15 +51,15 @@ access(all) contract Arcane: FungibleToken
           storagePath: self.VaultStoragePath, 
           receiverPath: self.VaultPublicPath, 
           metadataPath: self.VaultPublicPath, 
-          receiverLinkedType: Type<&Arcane.Vault>(), 
-          metadataLinkedType: Type<&Arcane.Vault>(), 
+          receiverLinkedType: Type<&ExpToken.Vault>(), 
+          metadataLinkedType: Type<&ExpToken.Vault>(), 
           createEmptyVaultFunction: (fun(): @{FungibleToken.Vault} { 
-            return <-Arcane.createEmptyVault(vaultType: Type<@Arcane.Vault>()) 
+            return <-ExpToken.createEmptyVault(vaultType: Type<@ExpToken.Vault>()) 
           }) 
         ) 
       case Type<FungibleTokenMetadataViews.TotalSupply>(): 
         return FungibleTokenMetadataViews.TotalSupply( 
-          totalSupply: Arcane.totalSupply 
+          totalSupply: ExpToken.totalSupply 
         ) 
     } 
     return nil 
@@ -70,13 +70,13 @@ access(all) contract Arcane: FungibleToken
     access(all) var balance: UFix64 
 
 
-    access(FungibleToken.Withdraw) fun withdraw(amount: UFix64): @Arcane.Vault { 
+    access(FungibleToken.Withdraw) fun withdraw(amount: UFix64): @ExpToken.Vault { 
       self.balance = self.balance - amount 
       return <-create Vault(balance: amount) 
     } 
 
     access(all) fun deposit(from: @{FungibleToken.Vault}) { 
-      let vault <- from as! @Arcane.Vault 
+      let vault <- from as! @ExpToken.Vault 
       self.balance = self.balance + vault.balance 
       destroy vault 
     } 
@@ -95,21 +95,21 @@ access(all) contract Arcane: FungibleToken
       return amount <= self.balance 
     } 
 
-    access(all) fun createEmptyVault(): @Arcane.Vault { 
+    access(all) fun createEmptyVault(): @ExpToken.Vault { 
       return <-create Vault(balance: 0.0) 
     } 
 
     access(all) view fun getViews(): [Type] { 
-      return Arcane.getContractViews(resourceType: nil) 
+      return ExpToken.getContractViews(resourceType: nil) 
     } 
 
     access(all) fun resolveView(_ view: Type): AnyStruct? { 
-      return Arcane.resolveContractView(resourceType: nil, viewType: view) 
+      return ExpToken.resolveContractView(resourceType: nil, viewType: view) 
     } 
 
     access(contract) fun burnCallback() { 
       if self.balance > 0.0 { 
-        Arcane.totalSupply = Arcane.totalSupply - self.balance 
+        ExpToken.totalSupply = ExpToken.totalSupply - self.balance 
       } 
       self.balance = 0.0 
     } 
@@ -126,32 +126,32 @@ access(all) contract Arcane: FungibleToken
     /// Function that mints new tokens, adds them to the total supply, 
     /// and returns them to the calling context. 
     /// 
-    access(all) fun mintTokens(amount: UFix64): @Arcane.Vault { 
-      Arcane.totalSupply = Arcane.totalSupply + amount 
+    access(all) fun mintTokens(amount: UFix64): @ExpToken.Vault { 
+      ExpToken.totalSupply = ExpToken.totalSupply + amount 
       let vault <-create Vault(balance: amount) 
       emit TokensMinted(amount: amount, type: vault.getType().identifier) 
       return <-vault 
     } 
   } 
 
-  access(all) fun createEmptyVault(vaultType: Type): @Arcane.Vault { 
+  access(all) fun createEmptyVault(vaultType: Type): @ExpToken.Vault { 
     return <- create Vault(balance: 0.0) 
   } 
 
   init() { 
     self.totalSupply = 1000.0 // existed before 
-    self.VaultStoragePath = /storage/ArcaneVault 
-    self.VaultPublicPath = /public/ArcaneVault 
-    self.MinterStoragePath = /storage/ArcaneMinter 
-    self.ReceiverPublicPath = /public/ArcaneReceiver 
+    self.VaultStoragePath = /storage/ExpTokenVault 
+    self.VaultPublicPath = /public/ExpTokenVault 
+    self.MinterStoragePath = /storage/ExpTokenMinter 
+    self.ReceiverPublicPath = /public/ExpTokenReceiver 
 
     let vault <- create Vault(balance: self.totalSupply) 
     emit TokensMinted(amount: vault.balance, type: vault.getType().identifier) 
     self.account.storage.save(<-vault, to: self.VaultStoragePath) 
 
-    let ArcaneCap = self.account.capabilities.storage.issue<&Arcane.Vault>(self.VaultStoragePath) 
-    self.account.capabilities.publish(ArcaneCap, at: self.VaultPublicPath) 
-    let RecieverCap = self.account.capabilities.storage.issue<&Arcane.Vault>(self.VaultStoragePath) 
+    let ExpTokenCap = self.account.capabilities.storage.issue<&ExpToken.Vault>(self.VaultStoragePath) 
+    self.account.capabilities.publish(ExpTokenCap, at: self.VaultPublicPath) 
+    let RecieverCap = self.account.capabilities.storage.issue<&ExpToken.Vault>(self.VaultStoragePath) 
     self.account.capabilities.publish(RecieverCap, at: self.ReceiverPublicPath) 
 
     let minter <- create Minter() 

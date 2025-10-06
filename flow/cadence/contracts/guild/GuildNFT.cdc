@@ -61,7 +61,7 @@ access(all) contract GuildNFT: NonFungibleToken {
         access(all) let guildName: String
         access(all) var members: {Address: UFix64}
         access(all) let id: UInt64
-
+        access(all) let guildCreator: Address
         access(all) event ResourceDestroyed(id: UInt64 = self.id, uuid: UInt64 = self.uuid)
 
         init(guildID: UInt64, guildName: String, owner: Address) {
@@ -69,6 +69,7 @@ access(all) contract GuildNFT: NonFungibleToken {
             self.guildID = guildID
             self.guildName = guildName
             self.members = {owner: 100.0}
+            self.guildCreator = owner
         }
 
         access(all) fun addMember(addr: Address, ownership: UFix64) {
@@ -76,7 +77,10 @@ access(all) contract GuildNFT: NonFungibleToken {
                 self.members.keys.length <= 5: "Admin actions are disabled for guilds with more than 5 members. Use DAO governance."
                 !self.members.containsKey(addr): "Address is already a member."
             }
+            log(self.members.keys.length)
+            let creatorOwnership = self.members[self.guildCreator]!
             self.members[addr] = ownership
+            self.members[self.guildCreator] = creatorOwnership - ownership
         }
         
         access(all) fun removeMember(addr: Address) {
@@ -84,6 +88,9 @@ access(all) contract GuildNFT: NonFungibleToken {
                 self.members.keys.length <= 5: "Admin actions are disabled for guilds with more than 5 members. Use DAO governance."
                 self.members.containsKey(addr): "Address is not a member."
             }
+            let memberOwnership = self.members[addr]!
+            let creatorOwnership = self.members[self.guildCreator]!
+            self.members[self.guildCreator] = memberOwnership + creatorOwnership
             self.members.remove(key: addr)
         }
 

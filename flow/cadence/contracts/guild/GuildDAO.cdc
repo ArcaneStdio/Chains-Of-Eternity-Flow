@@ -10,9 +10,9 @@ access(all) contract GuildDAO {
      access(all) resource interface GuildGovernance {
         access(all) let proposals: @{UInt64: GuildInterfaces.Proposal} // Dictionary holds resources
         access(all) fun getProposal(proposalID: UInt64): &GuildInterfaces.Proposal?
-        access(all) fun createAddMemberProposal(description: String, memberAddress: Address, ownership: UFix64, guildNFTRef: &GuildNFT.NFT, proposer: Address)
-        access(all) fun createKickMemberProposal(description: String, memberAddress: Address, guildNFTRef: &GuildNFT.NFT, proposer: Address)
-        access(all) fun createPurchasePerkProposal(description: String, perkID: UInt64, cost: UFix64, guildNFTRef: &GuildNFT.NFT, proposer: Address)
+        access(all) fun createAddMemberProposal(description: String, memberAddress: Address, ownership: UFix64, guildNFTRef: &GuildNFT.NFT, proposer: Address, duration: UFix64): UInt64
+        access(all) fun createKickMemberProposal(description: String, memberAddress: Address, guildNFTRef: &GuildNFT.NFT, proposer: Address, duration: UFix64)
+        access(all) fun createPurchasePerkProposal(description: String, perkID: UInt64, cost: UFix64, guildNFTRef: &GuildNFT.NFT, proposer: Address, duration: UFix64)
         access(all) fun vote(proposalID: UInt64, inFavor: Bool, guildNFTRef: &GuildNFT.NFT, voter: Address)
         access(all) fun executeProposal(proposalID: UInt64)
     }
@@ -35,38 +35,43 @@ access(all) contract GuildDAO {
         }
         
         // MODIFIED: Functions now accept the NFT ref and proposer address as arguments
-        access(all) fun createAddMemberProposal(description: String, memberAddress: Address, ownership: UFix64, guildNFTRef: &GuildNFT.NFT, proposer: Address) {
+        access(all) fun createAddMemberProposal(description: String, memberAddress: Address, ownership: UFix64, guildNFTRef: &GuildNFT.NFT, proposer: Address, duration: UFix64): UInt64 {
             pre {
                 guildNFTRef.isMember(addr: proposer): "Proposer must be a guild member."
                 !guildNFTRef.isMember(addr: memberAddress): "Address is already a member."
                 ownership > 0.0 && ownership <= 1.0: "Invalid ownership percentage."
             }
             let params: {String: AnyStruct} = {"memberAddress": memberAddress, "ownership": ownership}
-            self.createProposal(description: description, type: GuildInterfaces.ProposalType.addMember, parameters: params, proposer: proposer)
+            log("Created proposal params in GuildDAO:")
+            log(params) // <-- ADD THIS
+            let proposalID = self.createProposal(description: description, type: GuildInterfaces.ProposalType.addMember, parameters: params, proposer: proposer, duration: duration)
+            return proposalID
         }
         
-        access(all) fun createKickMemberProposal(description: String, memberAddress: Address, guildNFTRef: &GuildNFT.NFT, proposer: Address) {
+        access(all) fun createKickMemberProposal(description: String, memberAddress: Address, guildNFTRef: &GuildNFT.NFT, proposer: Address, duration: UFix64) {
             pre {
                 guildNFTRef.isMember(addr: proposer): "Proposer must be a guild member."
                 guildNFTRef.isMember(addr: memberAddress): "Address is not a member."
             }
             let params: {String: AnyStruct} = {"memberAddress": memberAddress}
-            self.createProposal(description: description, type: GuildInterfaces.ProposalType.kickMember, parameters: params, proposer: proposer)
+            self.createProposal(description: description, type: GuildInterfaces.ProposalType.kickMember, parameters: params, proposer: proposer, duration: duration)
         }
 
-        access(all) fun createPurchasePerkProposal(description: String, perkID: UInt64, cost: UFix64, guildNFTRef: &GuildNFT.NFT, proposer: Address) {
+        access(all) fun createPurchasePerkProposal(description: String, perkID: UInt64, cost: UFix64, guildNFTRef: &GuildNFT.NFT, proposer: Address, duration: UFix64) {
             pre { guildNFTRef.isMember(addr: proposer): "Proposer must be a guild member." }
             let params: {String: AnyStruct} = {"perkID": perkID, "cost": cost}
-            self.createProposal(description: description, type: GuildInterfaces.ProposalType.purchasePerk, parameters: params, proposer: proposer)
+            self.createProposal(description: description, type: GuildInterfaces.ProposalType.purchasePerk, parameters: params, proposer: proposer, duration: duration)
         }
 
-        access(self) fun createProposal(description: String, type: GuildInterfaces.ProposalType, parameters: {String: AnyStruct}, proposer: Address) {
-            let proposal <- GuildInterfaces.createProposal(proposalID: self.nextProposalID, proposer: proposer, description: description, type: type, parameters: parameters, duration: self.votingDuration)
+        access(self) fun createProposal(description: String, type: GuildInterfaces.ProposalType, parameters: {String: AnyStruct}, proposer: Address, duration: UFix64) : UInt64  {
+            let proposal <- GuildInterfaces.createProposal(proposalID: self.nextProposalID, proposer: proposer, description: description, type: type, parameters: parameters, duration: duration)
             let oldProposal <- self.proposals.insert(key: proposal.proposalID, <-proposal)
             destroy oldProposal
 
             emit ProposalCreated(guildID: self.guildID, proposalID: self.nextProposalID, proposer: proposer)
+            let createdProposalID = self.nextProposalID
             self.nextProposalID = self.nextProposalID + 1
+            return createdProposalID
         }
 
         access(all) fun vote(proposalID: UInt64, inFavor: Bool, guildNFTRef: &GuildNFT.NFT, voter: Address) {
@@ -94,21 +99,27 @@ access(all) contract GuildDAO {
         access(all) fun executeProposal(proposalID: UInt64) {
             let proposalRef = &self.proposals[proposalID] as &GuildInterfaces.Proposal?
                 ?? panic("Proposal not found.")
+            log("Updating status")
             proposalRef.updateStatus()
+            log("Updated status")
             assert(proposalRef.status == GuildInterfaces.ProposalStatus.succeeded, message: "Proposal has not passed.")
             
+            log("trying borrow")
             let guildManager = getAccount(GuildDAO.account.address).capabilities.borrow<&{GuildInterfaces.Executor}>(/public/GuildManagerExecutor)
                 ?? panic("Could not borrow GuildManager Executor capability")
+            log("borrow successful")
 
             let paramsRef = proposalRef.parameters
             let paramsCopy: {String: AnyStruct} = {}
             for key in paramsRef.keys {
                 paramsCopy[key] = paramsRef[key]!
             }
-
-            guildManager.executeDao(guildID: self.guildID, proposalType: proposalRef.type, parameters: paramsCopy)
-
+            log("Executing proposal")
+            log(paramsCopy) 
+            guildManager.executeDao(guildID: self.guildID, proposalType: proposalRef.type, parameters: proposalRef.getParameters())
+            log("Executed proposal")
             proposalRef.markExecuted()
+            log("Marked executed")
             emit ProposalExecuted(proposalID: proposalID)
         }
     }
