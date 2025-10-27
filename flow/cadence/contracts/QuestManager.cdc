@@ -1,7 +1,7 @@
 import FungibleToken from 0x9a0766d93b6608b7
-import Arcane from 0xf8d6e0586b0a20c7
-import NonFungibleToken from 0xf8d6e0586b0a20c7
-import RandomPicker from 0xf8d6e0586b0a20c7
+import Arcane from 0x0095f13a82f1a835
+import NonFungibleToken from 0x631e88ae7f1d7c20
+import RandomPicker from 0x926945503d279080
 
 
 access(all) contract QuestManager {
@@ -165,6 +165,13 @@ access(all) contract QuestManager {
             self.status = "EXPIRED"
         }
 
+        access(all) fun getStatus(): String {
+            return self.status
+        }
+        access(all) fun getExpiry(): UFix64{
+            return self.expiresAt
+        }
+
         
     }
     
@@ -173,22 +180,30 @@ access(all) contract QuestManager {
         access(all) fun markCompleted()
         access(all) fun markFailed()
         access(all) fun markExpired()
+        
+        access(all) fun getStatus(): String
+        access(all) fun getExpiry(): UFix64
     }
 
     
     access(all) resource Manager {
-
+        
         access(all) fun createQuest(
             level: UInt8,
             rarity: String
-        ): @Quest {
+        ) {
 
-            if !QuestManager.canCreateQuest(level: level, rarity: rarity) {
+            let mgrRef = QuestManager.account.capabilities.borrow<&QuestManager.Manager>(/public/QuestManager)
+                ?? panic("Manager resource not found")
+
+            // now call the method on the Manager resource reference
+            let canCreateQuest = mgrRef.canCreateQuest(level: level, rarity: rarity)
+            if !canCreateQuest {
                 panic("No available slot for level ".concat(level.toString()).concat(" rarity ").concat(rarity))
             }
 
             let now: UFix64 = getCurrentBlock().timestamp
-            let duration: UFix64 = durationIfCreatedNow ?? (QuestManager.RARITY_DURATIONS[rarity] ?? panic("No duration"))
+            let duration: UFix64 = QuestManager.RARITY_DURATIONS[rarity] ?? panic("No duration")
             let expiresAt: UFix64 = now + duration
             let enemies: {String: UInt64} = QuestManager.generateEnemies(level: level, rarity: rarity)
 
@@ -201,20 +216,27 @@ access(all) contract QuestManager {
                 rarity: rarity,
                 enemies: enemies,
                 expiresAt: expiresAt,
-                createdBy: self.account.address
+                createdBy: QuestManager.account.address
             )
 
-            QuestManager.activeCountsByLevelAndRarity[level]![rarity] = (QuestManager.activeCountsByLevelAndRarity[level]![rarity] ?? 0) + 1
+            let innerDict: {String: UInt64} = QuestManager.activeCountsByLevelAndRarity[level]!
+            //let triallist = QuestManager.activeCountsByLevelAndRarity[level]
+            if innerDict == nil {
+                QuestManager.activeCountsByLevelAndRarity[level] = {}
+            } else {
+                innerDict[rarity] = (innerDict[rarity] ?? 0) + 1 
+            }
 
+            QuestManager.activeCountsByLevelAndRarity[level] = innerDict
+            
             q.markActive()
             //let q <- create Quest( ... )
-            self.quests[id] <-! q  // store the resource in contract pool
+            QuestManager.quests[id] <-! q  // store the resource in contract pool
             emit QuestCreated(id: id, level: level, rarity: rarity, expiresAt: expiresAt)
 
-            return <- q
         }
 
-        access(all) fun canCreateQuest(level: UInt64, rarity: String): Bool {
+        access(all) fun canCreateQuest(level: UInt8, rarity: String): Bool {
             if QuestManager.activeCountsByLevelAndRarity[level] == nil {
                 QuestManager.activeCountsByLevelAndRarity[level] = {}
             }
@@ -223,20 +245,21 @@ access(all) contract QuestManager {
             let maxAllowed = QuestManager.RARITY_DISTRIBUTION[rarity] 
                                 ?? panic("Unknown rarity ".concat(rarity))
 
-            return currentCount < maxAllowed
+            return currentCount < UInt64(maxAllowed)
         }
+        
 
        
 
         access(all) fun joinQuest(playerAcct: auth(Storage, Capabilities, SaveValue)&Account, questID: UInt64, playerLevel: UInt8) {
-            let qRef = &QuestManager.quests[questID] as &Quest? 
+            let qRef = QuestManager.quests.borrow(questID)
                 ?? panic("Quest not found")
 
             let qLevel = qRef.level
             if qLevel > playerLevel {
-                if qLevel - playerLevel > 2 { panic("Too low level") }
+                if qLevel - playerLevel >= 2 { panic("Too low level") }
             } else {
-                if playerLevel - qLevel > 2 { panic("Too high level") }
+                if playerLevel - qLevel >= 2 { panic("Too high level") }
             }
 
             var exists = false
@@ -255,14 +278,13 @@ access(all) contract QuestManager {
             let storagePath: StoragePath = StoragePath(identifier: "/storage/QuestParticipation_".concat(questID.toString()))!
             playerAcct.storage.save(<- participation, to: storagePath)
 
-           // let pathStr = "/public/QuestParticipation_".concat(questID.toString())
 
 
             // link a private capability so manager & scheduler can borrow it later:
-            let linkPath: PrivatePath = PrivatePath(identifier: "/private/QuestParticipation_".concat(questID.toString()))!
+            let linkPath: PublicPath = PublicPath(identifier: "/public/QuestParticipation_".concat(questID.toString()))!
             // playerAcct.capabilities.storage.issue<&{QuestParticipation.QuestParticipationManagerAccess}>(linkPath)
             let cap = playerAcct.capabilities.storage.issue<&{QuestManager.QuestParticipationManagerAccess}>(storagePath)
-            playerAcct.capabilities.storage.issue(cap, at: linkPath)
+            playerAcct.capabilities.publish(cap, at: linkPath)
             emit QuestAssigned(id: questID, player: playerAcct.address)
         }
 
@@ -304,28 +326,24 @@ access(all) contract QuestManager {
 
             //mark for player's reference
             let pathStr = "/public/QuestParticipation_".concat(questID.toString())
-            let partCap = getAccount(signer.address).capabilities.borrow<&{QuestManager.QuestParticipationManagerAccess}>(PublicPath(identifier: pathStr)!)
+            let partCap = signer.capabilities.borrow<&{QuestManager.QuestParticipationManagerAccess}>(PublicPath(identifier: pathStr)!)
             if partCap != nil {
                 let notNullCap: &{QuestManager.QuestParticipationManagerAccess} = partCap!
                 notNullCap.markCompleted()
-                // ======================================== session band kar de :) ==================================================
-                // ======================================== sleep karke chali gayi :) ==================================================
-                // ======================================== gandmasti :) =========================================================
-                // ======================================== ok bye =========================================================
-            } else {
+                } else {
                 panic("Could not borrow participation reference to mark completed")
             }
 
 
             let baseValue: UFix64 = QuestManager.BASE_REWARD_BY_RARITY[qRef.rarity] 
                 ?? panic("No base reward for rarity")
-
-            let randomRange: [UFix64] = [0.0, 5.0, 10.0, 15.0, 20.0]
-            let randomSign: [String] = ["pos", "neg"]
-            var vrfOutput: UFix64 = QuestManager.pickRandomValue(values: randomRange)
-            let vrfsignoutput: String = QuestManager.pickRandomString(values: randomSign)
+            let receiverAddress: Address = signer.address
+            let randomRange: [UInt64] = [0, 5, 10, 15, 20]
+            let randomSign: [UInt64] = [0, 1]
+            var vrfOutput: UFix64 = UFix64(QuestManager.pickRandomValue(values: randomRange))
+            let vrfsignoutput: UInt64 = QuestManager.pickRandomValue(values: randomSign)
             var factor: Int = 1
-            if vrfsignoutput == "neg" {
+            if vrfsignoutput == 0 {
                 factor = Int(vrfOutput) * -1
             }
             let variabilityFactor: UFix64 = (UFix64(factor) * 0.01) + 1.0
@@ -334,47 +352,26 @@ access(all) contract QuestManager {
 
             let delta: UFix64 = UFix64(qRef.level) - UFix64(playerLevel)
 
-            //let reward: UFix64 = 
-            //    if delta == 1.0 {
-            //        reward_before_pl ** 2.0
-            //    } else if delta == -1.0 {
-            //        reward_before_pl ** 0.5
-            //    } else {
-            //        reward_before_pl * 1.0
-            //    }
 
             if delta == 1.0{
-                reward = reward ** 2.0
-            } else if delta == -1.0 {
-                reward = reward ** 0.5
+                reward = reward * 1.2
+            } else if delta < 0.0 {
+                reward = reward * 0.7
             } else {
                 reward = reward * 1.0
             }
-            //let arcVaultRef = self.account.borrow<&Arcane.Vault>(from: QuestManager.ARCVaultStoragePath)
-            //    ?? panic("Contract ARC vault not found or not funded")
-            //let payout <- arcVaultRef.withdraw(amount: reward)
-//
-            //
-            //let playerAccount = getAccount(signer.address)
-            //let receiverCap = playerAccount.getCapability<&{FungibleToken.Receiver}>(Arcane.ReceiverPublicPath)
-            //if !receiverCap.check() {
-            //    destroy payout
-            //    panic("Player does not have ARC receiver set up")
-            //}
-//
-           // let receiverRef = receiverCap.borrow() ?? panic("Could not borrow player's ARC receiver")
-           // receiverRef.deposit(from: <- payout)
+            
 
            let vault <- QuestManager.account.storage.load<@Arcane.Vault>(from: Arcane.VaultStoragePath)
                 ?? panic("Could not load the contract's Arcane vault")
 
-            let receiver = getAccount(receiverAddress).capabilities.get<&{FungibleToken.Receiver}>(Arcane.ReceiverPublicPath).borrow() 
+            let receiver = signer.capabilities.borrow<&{FungibleToken.Receiver}>(Arcane.ReceiverPublicPath)
                 ?? panic("Could not borrow receiver reference to the recipient's Vault")
 
             let sentVault <- vault.withdraw(amount: reward)
             receiver.deposit(from: <-sentVault)
             
-            self.account.storage.save(<-vault, to: Arcane.VaultStoragePath)
+            QuestManager.account.storage.save(<-vault, to: Arcane.VaultStoragePath)
         
 
             qRef.markCompleted()
@@ -384,21 +381,26 @@ access(all) contract QuestManager {
             emit QuestCompleted(id: questID, winner: signer.address, reward: reward)
         }
 
+        //yahan madarchod scehduled transaction lagra hai 😭
         access(all) fun expireParticipantIfNeeded(player: Address, questID: UInt64) {
-            let pathStr = "/private/QuestParticipation_".concat(questID.toString())
-            let cap = getAccount(player).getCapability<&{QuestManager.QuestParticipationManagerAccess}>(PrivatePath(identifier: pathStr))
-            if !cap.check() { return }
-            let partRef = cap.borrow() ?? return
-            if partRef.status == "ACTIVE" && getCurrentBlock().timestamp >= partRef.expiresAt {
-                partRef.markExpired()
+            let pathStr = "/public/QuestParticipation_".concat(questID.toString())
+            let partRef = getAccount(player).capabilities.borrow<&{QuestManager.QuestParticipationManagerAccess}>(PublicPath(identifier: pathStr)!)!
+            
+            if partRef.getStatus() != nil {
+                let status: String = partRef.getStatus()
+                if partRef.getStatus() == "ACTIVE" && getCurrentBlock().timestamp >= partRef.getExpiry() {
+                    partRef.markExpired()
+                    //let playerAcct = getAccount(player)
+                    //playerAcct.capabilities.storage.getController(byCapabilityID: questID)
 
-                playerAcct.unlink(PrivatePath(identifier: pathStr))
-                let storage_path = "/storage/QuestParticipation_".concat(questID.toString())
-                let participation <- playerAcct.load<@QuestParticipation>(from: StoragePath(identifier: storage_path))
-                    ?? panic("Cannot load participation to expire")
-                destroy participation
+                    //playerAcct.capabilities.unpublish(PublicPath(identifier: pathStr))
+                    //let storage_path = "/storage/QuestParticipation_".concat(questID.toString())
+                    //let participation <- playerAcct.Capabilities.borrow(&<QuestManager.QuestParticipation>(from: StoragePath(identifier: storage_path)))
+                    //    ?? panic("Cannot load participation to expire")
+                    //destroy participation
 
-                emit QuestFailed(id: questID, reason: "Expired for player")
+                    emit QuestFailed(id: questID, reason: "Expired for player")
+                }
             }
         }
 
@@ -416,17 +418,15 @@ access(all) contract QuestManager {
                         for playerAddr in q.assignedTo {
                             let playerAcct = getAccount(playerAddr)
                             let storagePath = "/storage/QuestParticipation_".concat(questID.toString())
-                            let privatePath = "/private/QuestParticipation_".concat(questID.toString())
-                        // let pathStr = "/public/QuestParticipation_".concat(questID.toString())
+                            let privatePath = "/public/QuestParticipation_".concat(questID.toString())
+                            let pathStr = "/public/QuestParticipation_".concat(questID.toString())
                             //let partCap = getAccount(signer.address).capabilities.borrow<&{QuestParticipation.QuestParticipationManagerAccess}>(PublicPath(identifier: pathStr)!)
-                            if let part <- playerAcct.load<@QuestParticipation>(from: StoragePath(identifier: storagePath)!) {
-                                part.markExpired()
-                                destroy part
-                            }
-                            playerAcct.unlink(privatePath)
+                            let partRef = playerAcct.capabilities.borrow<&{QuestManager.QuestParticipationManagerAccess}>(PublicPath(identifier: pathStr)!)!
+                            partRef.markExpired()
+                            //destroy partRef
+                           
+                            // playerAcct.unlink(privatePath)
                         }
-
-                        //https://cadence-lang.org/docs/cadence-migration-guide/improvements#-motivation-12
                         
                         QuestManager.decrementActiveCount(level: q.level, rarity: q.rarity)
                         destroy q
@@ -434,7 +434,7 @@ access(all) contract QuestManager {
                     } else {
                         QuestManager.quests[questID] <-! q
                     }
-                }else 
+                } else 
                 {
                     destroy q1
                 }
@@ -467,13 +467,13 @@ access(all) contract QuestManager {
 
         maxCount = remainingWeight / UFix64(weight_enemy1)
 
-        let range1: [UFix64] = []
+        let range1: [UInt64] = []
         var i: UFix64 = 0.0
         while i <= UFix64(maxCount) {
-            range1.append(i)
+            range1.append(UInt64(i))
             i = i + 1.0
         }
-        let count1 = QuestManager.pickRandomValue(values: range1)
+        let count1 = UFix64(QuestManager.pickRandomValue(values: range1))
 
 
         //let count1 = UInt64(QuestManager.pickRandomValue(values: Array(0...Int(maxCount))))
@@ -485,10 +485,10 @@ access(all) contract QuestManager {
         let weight_enemy2 = self.ENEMY_WEIGHTS[enemy_2]!
         maxCount = remainingWeight / UFix64(weight_enemy2)
 
-        let range2: [UFix64] = []
+        let range2: [UInt64] = []
         i = 0.0
         while i <= UFix64(maxCount) {
-            range2.append(i)
+            range2.append(UInt64(i))
             i = i + 1.0
         }
         let count2 = QuestManager.pickRandomValue(values: range2)
@@ -502,19 +502,19 @@ access(all) contract QuestManager {
     }
 
 
-    access(all) fun pickRandomValue(values: [UFix64]): UFix64 {
+    access(all) fun pickRandomValue(values: [UInt64]): UInt64 {
         pre { values.length > 0: "Values array cannot be empty" }
         let receipt <- RandomPicker.commit(values: values)
-        let result: UFix64 = RandomPicker.reveal(receipt: <-receipt)
+        let result: UInt64 = RandomPicker.reveal(receipt: <-receipt)
         return result
     }
 
-    access(all) fun pickRandomString(values: [String]): String {
-        pre { values.length > 0: "Values array cannot be empty" }
-        let receipt <- RandomPicker.commit(values: values)
-        let result: String = RandomPicker.reveal(receipt: <-receipt)
-        return result
-    }
+    //access(all) fun pickRandomString(values: [String]): String {
+    //    pre { values.length > 0: "Values array cannot be empty" }
+    //    let receipt <- RandomPicker.commit(values: values)
+    //    let result: String = RandomPicker.reveal(receipt: <-receipt)
+    //    return result
+    //}
 
    
     access(all) resource interface PublicQuestCollection {
@@ -561,7 +561,7 @@ access(all) contract QuestManager {
 
     //self arc deposit function
     access(all) fun depositArc(from: @Arcane.Vault) {
-        let vault <- self.account.storage.load<@Arcane.Vault>(from: Arcane.VaultStoragePath)
+        let vault <- QuestManager.account.storage.load<@Arcane.Vault>(from: Arcane.VaultStoragePath)
             ?? panic("Could not load the contract's Arcane vault")
         
         vault.deposit(from: <-from)
@@ -571,15 +571,18 @@ access(all) contract QuestManager {
 
     // withdraw ARC by contract owner (for admin)
     access(all) fun withdrawARCAdmin(amount: UFix64, to: Address) {
-        let vaultRef = self.account.capabilities.borrow<&Arcane.Vault>(from: self.ARCVaultStoragePath)
+        let vaultRef <- QuestManager.account.storage.load<@Arcane.Vault>(from: Arcane.VaultStoragePath)
                         ?? panic("Contract ARC vault not found")
         let payout <- vaultRef.withdraw(amount: amount)
+        self.account.storage.save(<-vaultRef, to: Arcane.VaultStoragePath)
         let recipient = getAccount(to)
-        let receiverCap = recipient.capabilities.borrow<&{FungibleToken.Receiver}>(/public/arcReceiver)
+        let receiverCap = recipient.capabilities.get<&{FungibleToken.Receiver}>(Arcane.ReceiverPublicPath)
         if receiverCap == nil { destroy payout; panic("Recipient has no ARC receiver") }
-        let recv = receiverCap.borrow() ?? panic("Cannot borrow recipient receiver")
-        recv.deposit(from: <- payout)
-        emit ARCWithdrawn(amount: amount, to: to)
+        else {
+            let recv = receiverCap.borrow() ?? panic("Cannot borrow recipient receiver")
+            recv.deposit(from: <- payout)
+            emit ARCWithdrawn(amount: amount, to: to)
+        }
     }
 
     access(contract) fun createManager(): @Manager {
@@ -657,7 +660,7 @@ access(all) contract QuestManager {
 
 
         let manager <- self.createManager()
-        self.account.save(<- manager, to: /storage/QuestManager)
+        self.account.storage.save(<- manager, to: /storage/QuestManager)
     }
 }
 
