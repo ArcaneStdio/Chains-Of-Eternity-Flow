@@ -786,7 +786,8 @@
 					]
 				},
 				"RewardCronTransactionHandler",
-				"AuctionCallbackHandler"
+				"AuctionCallbackHandler",
+				"QuestManager"
 			]
 		}
 	}
