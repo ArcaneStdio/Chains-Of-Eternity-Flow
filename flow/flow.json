@@ -76,6 +76,13 @@
 				"testnet": "c6e616f1e50fcfab"
 			}
 		},
+		"Xorshift128plus": {
+			"source": "cadence/contracts/Xorshift128plus.cdc",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"testnet": "c6e616f1e50fcfab"
+			}
+		},
 		"GuildDAOCallbackHandler": {
 			"source": "cadence/contracts/guild/GuildDAOCallbackHandler.cdc",
 			"aliases": {
@@ -141,6 +148,12 @@
 				"emulator": "f8d6e0586b0a20c7"
 			}
 		},
+		"QuestManager": {
+			"source": "cadence/contracts/QuestManager.cdc",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7"
+			}
+		},
 		"ItemManager": {
 			"source": "cadence/contracts/ItemManager.cdc",
 			"aliases": {
@@ -155,16 +168,31 @@
 				"testnet": "c6e616f1e50fcfab"
 			}
 		},
+		"RandomConsumer": {
+			"source": "cadence/contracts/RandomConsumer.cdc",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"testnet": "c6e616f1e50fcfab"
+			}
+		},
 		"MockOracle": {
 			"source": "cadence/tests/contracts/MockOracle.cdc",
 			"aliases": {
 				"testing": "0000000000000009"
 			}
 		},
-		"QuestManager": {
-			"source": "cadence/contracts/QuestManager.cdc",
+		"SpellManager": {
+			"source": "cadence/contracts/SpellManager.cdc",
 			"aliases": {
-				"emulator": "f8d6e0586b0a20c7"
+				"emulator": "f8d6e0586b0a20c7",
+				"testnet": "c6e616f1e50fcfab"
+			}
+		},
+		"RandomPicker": {
+			"source": "cadence/contracts/RandomPicker.cdc",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"testnet": "c6e616f1e50fcfab"
 			}
 		},
 		"RentItemHandler": {
@@ -715,19 +743,17 @@
 	"deployments": {
 		"emulator": {
 			"emulator-account": [
-				"ItemManager",
 				"Arcane",
-				"ItemBurner",
-				"GuildInterfaces",
-				"GuildNFT",
-				"GuildDAO",
-				"GuildManager",
-				"GuildDAOCallbackHandler"
+				"Xorshift128plus",
+				"RandomConsumer",
+				"RandomPicker",
+				"QuestManager"
+				
 			]
 		},
 		"testnet": {
 			"allContractsHolder": [
-				"QuestManager"
+				"SpellManager"
 			]
 		}
 	}

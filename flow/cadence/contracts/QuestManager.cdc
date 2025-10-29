@@ -1,7 +1,7 @@
-import FungibleToken from 0x9a0766d93b6608b7
-import Arcane from 0x0095f13a82f1a835
-import NonFungibleToken from 0x631e88ae7f1d7c20
-import RandomPicker from 0x926945503d279080
+import FungibleToken from 0xee82856bf20e2aa6
+import Arcane from 0xf8d6e0586b0a20c7
+import NonFungibleToken from 0xf8d6e0586b0a20c7
+import RandomPicker from 0xf8d6e0586b0a20c7
 
 
 access(all) contract QuestManager {
@@ -252,7 +252,7 @@ access(all) contract QuestManager {
        
 
         access(all) fun joinQuest(playerAcct: auth(Storage, Capabilities, SaveValue)&Account, questID: UInt64, playerLevel: UInt8) {
-            let qRef = QuestManager.quests.remove(key: questID)
+            let qRef <- QuestManager.quests.remove(key: questID)
                 ?? panic("Quest not found")
 
             let qLevel = qRef.level

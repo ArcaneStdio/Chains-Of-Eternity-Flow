@@ -240,8 +240,7 @@ access(all) contract ItemManager: NonFungibleToken {
             self.accessory = accessory
             self.imgURL = "ipfs://bafybeidhmg4d7gsiby2jrsilfkntoiq2aknreeeghmgfgltjqiacecpdey"
         }
-        //i love you raptor
-        //pleae accept my love <3
+        
         // Metadata Views support
         // access(all) fun resolveView(_ view: Type): AnyStruct? {
         //     switch view {
