@@ -188,14 +188,11 @@ access(all) contract QuestManager {
     
     access(all) resource Manager {
         
-        access(all) fun createQuest(
-            level: UInt8,
-            rarity: String
-        ) {
+        access(all) fun createQuest() {
 
             let mgrRef = QuestManager.account.capabilities.borrow<&QuestManager.Manager>(/public/QuestManager)
                 ?? panic("Manager resource not found")
-
+            
             // now call the method on the Manager resource reference
             let canCreateQuest = mgrRef.canCreateQuest(level: level, rarity: rarity)
             if !canCreateQuest {
@@ -404,39 +401,33 @@ access(all) contract QuestManager {
         }
 
         // This function is intended to be called via scheduled transactions
-        access(all) fun cleanupExpiredQuests() {
+        access(all) fun cleanupExpiredQuests(questID: UInt64) {
             let now = getCurrentBlock().timestamp
 
-            for questID in QuestManager.quests.keys {
-                let q1: @QuestManager.Quest? <- QuestManager.quests.remove(key: questID)
-                if(q1 != nil)
-                {
-                    let q: @QuestManager.Quest <- q1!
-                    if now >= (q.createdAt + QuestManager.UNCLAIMED_TIMEOUT) || q.isExpired(now: now) {
-
-                        for playerAddr in q.assignedTo {
-                            let playerAcct = getAccount(playerAddr)
-                            let storagePath = "/storage/QuestParticipation_".concat(questID.toString())
-                            let privatePath = "/public/QuestParticipation_".concat(questID.toString())
-                            let pathStr = "/public/QuestParticipation_".concat(questID.toString())
-                            //let partCap = getAccount(signer.address).capabilities.borrow<&{QuestParticipation.QuestParticipationManagerAccess}>(PublicPath(identifier: pathStr)!)
-                            let partRef = playerAcct.capabilities.borrow<&{QuestManager.QuestParticipationManagerAccess}>(PublicPath(identifier: pathStr)!)!
-                            partRef.markExpired()
-                            //destroy partRef
-                           
-                            // playerAcct.unlink(privatePath)
-                        }
-                        
-                        QuestManager.decrementActiveCount(level: q.level, rarity: q.rarity)
-                        destroy q
-                        emit QuestRemoved(id: questID)
-                    } else {
-                        QuestManager.quests[questID] <-! q
-                    }
-                } else 
-                {
-                    destroy q1
+            //for questID in QuestManager.quests.keys {
+            let q1: @QuestManager.Quest? <- QuestManager.quests.remove(key: questID)
+            if(q1 != nil)
+            {
+                let q: @QuestManager.Quest <- q1!
+                for playerAddr in q.assignedTo {
+                    let playerAcct = getAccount(playerAddr)
+                    let storagePath = "/storage/QuestParticipation_".concat(questID.toString())
+                    let privatePath = "/public/QuestParticipation_".concat(questID.toString())
+                    let pathStr = "/public/QuestParticipation_".concat(questID.toString())
+                    //let partCap = getAccount(signer.address).capabilities.borrow<&{QuestParticipation.QuestParticipationManagerAccess}>(PublicPath(identifier: pathStr)!)
+                    let partRef = playerAcct.capabilities.borrow<&{QuestManager.QuestParticipationManagerAccess}>(PublicPath(identifier: pathStr)!)!
+                    partRef.markExpired()
+                    //destroy partRef
+                   
+                    // playerAcct.unlink(privatePath)
                 }
+                
+                QuestManager.decrementActiveCount(level: q.level, rarity: q.rarity)
+                destroy q
+                emit QuestRemoved(id: questID)
+                
+            } else {
+                destroy q1
             }
         }
 

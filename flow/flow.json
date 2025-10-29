@@ -195,6 +195,20 @@
 				"testnet": "c6e616f1e50fcfab"
 			}
 		},
+		"QuestTransactionUserHandler": {
+			"source": "cadence/contracts/QuestTransactionUserHandler.cdc",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"testnet": "c6e616f1e50fcfab"
+			}
+		},
+		"QuestTransactionQuestHandler": {
+			"source": "cadence/contracts/QuestTransactionQuestHandler.cdc",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"testnet": "c6e616f1e50fcfab"
+			}
+		},
 		"RentItemHandler": {
 			"source": "cadence/contracts/RentItemHandler.cdc",
 			"aliases": {
@@ -747,7 +761,17 @@
 				"Xorshift128plus",
 				"RandomConsumer",
 				"RandomPicker",
-				"QuestManager"
+				"ItemManager",
+				"QuestManager",
+				{
+					"args": [
+						{ "type": "UFix64", "value": "0.025" }
+					],
+					"name": "AuctionHouse"
+				},
+				"AuctionCallbackHandler",
+				"QuestTransactionQuestHandler",
+				"QuestTransactionUserHandler"
 				
 			]
 		},

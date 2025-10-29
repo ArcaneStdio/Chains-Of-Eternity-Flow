@@ -1,5 +1,5 @@
-import FlowTransactionScheduler from 0x8c5303eaa26202d6
-import AuctionHouse from 0x0095f13a82f1a835
+import FlowTransactionScheduler from 0xf8d6e0586b0a20c7
+import AuctionHouse from 0xf8d6e0586b0a20c7
 
 access(all) contract AuctionCallbackHandler {
 

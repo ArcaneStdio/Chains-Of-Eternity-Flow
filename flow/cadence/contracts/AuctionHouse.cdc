@@ -1,7 +1,7 @@
-import FungibleToken from 0x9a0766d93b6608b7
-import FlowToken from 0x7e60df042a9c0868
-import NonFungibleToken from 0x631e88ae7f1d7c20
-import ItemManager from 0x0095f13a82f1a835
+import FungibleToken from 0xee82856bf20e2aa6
+import FlowToken from 0x0ae53cb6e3f42a79
+import NonFungibleToken from 0xf8d6e0586b0a20c7
+import ItemManager from 0xf8d6e0586b0a20c7
 
 access(all) contract AuctionHouse {
 
@@ -204,11 +204,9 @@ access(all) contract AuctionHouse {
         // No valid bids -> return NFT to seller
         if listing.highestBidder == nil || listing.currentBid == listing.basePrice {
             let nft <- self.saleCollection.withdraw(withdrawID: listing.tokenID)
-            let sellerCollection = getAccount(listing.seller)
-                .storage
-                .borrow<&{NonFungibleToken.Receiver}>(
-                    ItemManager.CollectionPublicPath
-                )
+            let sellerCollection =getAccount(listing.seller).capabilities.borrow<&{NonFungibleToken.Receiver}>(
+                  ItemManager.CollectionPublicPath
+          )
                 ?? panic("Seller has not published a public ItemManager collection capability")
             sellerCollection.deposit(token: <- nft)
             emit AuctionCompleted(itemID: listingID, winner: nil, finalPrice: 0.0)
@@ -241,9 +239,9 @@ access(all) contract AuctionHouse {
         // transfer NFT to winner
         let nft <- self.saleCollection.withdraw(withdrawID: listing.tokenID)
         let winner = listing.highestBidder!
-        let winnerCollection = getAccount(winner).storage.borrow<&{NonFungibleToken.Receiver}>(
-            ItemManager.CollectionPublicPath
-        )
+        let winnerCollection = getAccount(winner).capabilities.borrow<&{NonFungibleToken.Receiver}>(
+                  ItemManager.CollectionPublicPath
+          )
             ?? panic("Winner has not published a public ItemManager collection capability")
         winnerCollection.deposit(token: <- nft)
 
