@@ -252,7 +252,7 @@ access(all) contract QuestManager {
        
 
         access(all) fun joinQuest(playerAcct: auth(Storage, Capabilities, SaveValue)&Account, questID: UInt64, playerLevel: UInt8) {
-            let qRef = QuestManager.quests.borrow(questID)
+            let qRef = QuestManager.quests.remove(key: questID)
                 ?? panic("Quest not found")
 
             let qLevel = qRef.level
@@ -285,12 +285,11 @@ access(all) contract QuestManager {
             // playerAcct.capabilities.storage.issue<&{QuestParticipation.QuestParticipationManagerAccess}>(linkPath)
             let cap = playerAcct.capabilities.storage.issue<&{QuestManager.QuestParticipationManagerAccess}>(storagePath)
             playerAcct.capabilities.publish(cap, at: linkPath)
+            QuestManager.quests[questID] <-! qRef  // return quest back to contract pool
             emit QuestAssigned(id: questID, player: playerAcct.address)
         }
 
-     
 
-       
         access(all) fun completeQuest(signer: auth(SaveValue, BorrowValue) &Account, questID: UInt64, playerLevel: UInt8, enemies_defeated: {String: UInt64}) {
             let collectionRef = signer.capabilities.borrow<&QuestCollection>(QuestManager.QuestCollectionPublicPath)
                                 ?? panic("No QuestCollection for signer")
