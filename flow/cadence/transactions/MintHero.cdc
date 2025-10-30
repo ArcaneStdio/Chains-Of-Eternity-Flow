@@ -1,5 +1,5 @@
-import HeroNFT from 0x350ca9f549f3afd6
-import NonFungibleToken from 0x631e88ae7f1d7c20
+import HeroNFT from 0xf8d6e0586b0a20c7
+import NonFungibleToken from 0xf8d6e0586b0a20c7
 
 transaction(
     recipient: Address

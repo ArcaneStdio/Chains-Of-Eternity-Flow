@@ -1,4 +1,4 @@
-import HeroNFT from 0x0095f13a82f1a835
+import HeroNFT from 0xf8d6e0586b0a20c7
 
 transaction {
     prepare(signer: auth(BorrowValue, IssueStorageCapabilityController, PublishCapability, SaveValue, UnpublishCapability) &Account) {

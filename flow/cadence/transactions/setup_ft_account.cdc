@@ -17,11 +17,6 @@ transaction {
 
         let receiverPath = Arcane.ReceiverPublicPath
 
-        // 2. Unpublish any old or incorrect capability at the target path.
-        if signer.capabilities.exists(receiverPath) {
-            signer.capabilities.unpublish(receiverPath)
-        }
-
         // 3. CORRECT WAY to issue a capability restricted to an interface in Cadence 1.0+.
         //    The generic type is a reference to the INTERFACE TYPE ITSELF, not the concrete type.
         let receiverCapability = signer.capabilities.storage.issue<&{FungibleToken.Receiver}>(Arcane.VaultStoragePath)

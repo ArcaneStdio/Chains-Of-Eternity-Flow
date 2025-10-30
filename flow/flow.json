@@ -63,6 +63,13 @@
 				"testnet": "631e88ae7f1d7c20"
 			}
 		},
+		"FlowTransactionSchedulerUtils": {
+			"source": "cadence/contracts/FlowTransactionSchedulerUtils.cdc",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"testnet": "c6e616f1e50fcfab"
+			}
+		},
 		"FungibleTokenConnectors": {
 			"source": "cadence/contracts/connectors/FungibleTokenConnectors.cdc",
 			"aliases": {
@@ -71,13 +78,6 @@
 		},
 		"GuildDAO": {
 			"source": "cadence/contracts/guild/GuildDAO.cdc",
-			"aliases": {
-				"emulator": "f8d6e0586b0a20c7",
-				"testnet": "c6e616f1e50fcfab"
-			}
-		},
-		"Xorshift128plus": {
-			"source": "cadence/contracts/Xorshift128plus.cdc",
 			"aliases": {
 				"emulator": "f8d6e0586b0a20c7",
 				"testnet": "c6e616f1e50fcfab"
@@ -148,12 +148,6 @@
 				"emulator": "f8d6e0586b0a20c7"
 			}
 		},
-		"QuestManager": {
-			"source": "cadence/contracts/QuestManager.cdc",
-			"aliases": {
-				"emulator": "f8d6e0586b0a20c7"
-			}
-		},
 		"ItemManager": {
 			"source": "cadence/contracts/ItemManager.cdc",
 			"aliases": {
@@ -168,28 +162,20 @@
 				"testnet": "c6e616f1e50fcfab"
 			}
 		},
-		"RandomConsumer": {
-			"source": "cadence/contracts/RandomConsumer.cdc",
-			"aliases": {
-				"emulator": "f8d6e0586b0a20c7",
-				"testnet": "c6e616f1e50fcfab"
-			}
-		},
 		"MockOracle": {
 			"source": "cadence/tests/contracts/MockOracle.cdc",
 			"aliases": {
 				"testing": "0000000000000009"
 			}
 		},
-		"SpellManager": {
-			"source": "cadence/contracts/SpellManager.cdc",
+		"QuestManager": {
+			"source": "cadence/contracts/QuestManager.cdc",
 			"aliases": {
-				"emulator": "f8d6e0586b0a20c7",
-				"testnet": "c6e616f1e50fcfab"
+				"emulator": "f8d6e0586b0a20c7"
 			}
 		},
-		"RandomPicker": {
-			"source": "cadence/contracts/RandomPicker.cdc",
+		"QuestTransactionQuestHandler": {
+			"source": "cadence/contracts/QuestTransactionQuestHandler.cdc",
 			"aliases": {
 				"emulator": "f8d6e0586b0a20c7",
 				"testnet": "c6e616f1e50fcfab"
@@ -202,15 +188,15 @@
 				"testnet": "c6e616f1e50fcfab"
 			}
 		},
-		"FlowTransactionSchedulerUtils": {
-			"source": "cadence/contracts/FlowTransactionSchedulerUtils.cdc",
+		"RandomConsumer": {
+			"source": "cadence/contracts/RandomConsumer.cdc",
 			"aliases": {
 				"emulator": "f8d6e0586b0a20c7",
 				"testnet": "c6e616f1e50fcfab"
 			}
 		},
-		"QuestTransactionQuestHandler": {
-			"source": "cadence/contracts/QuestTransactionQuestHandler.cdc",
+		"RandomPicker": {
+			"source": "cadence/contracts/RandomPicker.cdc",
 			"aliases": {
 				"emulator": "f8d6e0586b0a20c7",
 				"testnet": "c6e616f1e50fcfab"
@@ -225,6 +211,13 @@
 		},
 		"RewardCronTransactionHandler": {
 			"source": "cadence/contracts/RewardCronTransactionHandler.cdc",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"testnet": "c6e616f1e50fcfab"
+			}
+		},
+		"SpellManager": {
+			"source": "cadence/contracts/SpellManager.cdc",
 			"aliases": {
 				"emulator": "f8d6e0586b0a20c7",
 				"testnet": "c6e616f1e50fcfab"
@@ -258,6 +251,13 @@
 			"source": "cadence/contracts/connectors/evm/UniswapV2SwapConnectors.cdc",
 			"aliases": {
 				"testing": "0000000000000009"
+			}
+		},
+		"Xorshift128plus": {
+			"source": "cadence/contracts/Xorshift128plus.cdc",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"testnet": "c6e616f1e50fcfab"
 			}
 		}
 	},
@@ -742,6 +742,10 @@
 				"location": "emulator-account.pkey"
 			}
 		},
+		"love_flow": {
+			"address": "179b6b1cb6755e31",
+			"key": "3a1932ed2498299fb5f1f8fb18f9bc9c6bb568a88335a2ddbace84bb78d496dc"
+		},
 		"test-acct": {
 			"address": "179b6b1cb6755e31",
 			"key": "ab64b861cbdaf3243b38445389cb68649ec9b82ca5258f8edb7a74bde708496b"
@@ -771,16 +775,19 @@
 				"ItemManager",
 				"QuestManager",
 				{
+					"name": "AuctionHouse",
 					"args": [
-						{ "type": "UFix64", "value": "0.025" }
-					],
-					"name": "AuctionHouse"
+						{
+							"value": "0.02500000",
+							"type": "UFix64"
+						}
+					]
 				},
 				"AuctionCallbackHandler",
 				"QuestTransactionQuestHandler",
 				"QuestTransactionUserHandler",
-				"FlowTransactionSchedulerUtils"
-				
+				"FlowTransactionSchedulerUtils",
+				"HeroManager"
 			]
 		},
 		"testnet": {
