@@ -6,7 +6,7 @@ import RandomPicker from 0xf8d6e0586b0a20c7
 
 access(all) contract QuestManager {
 
-    access(all) event QuestCreated(id: UInt64, level: UInt8, rarity: String, expiresAt: UFix64)
+    access(all) event QuestCreated(id: UInt64, level: UInt8, rarity: String, enemies: {String: UInt64} , expiresAt: UFix64)
     access(all) event QuestAssigned(id: UInt64, player: Address)
     access(all) event QuestAccepted(id: UInt64, player: Address)
     access(all) event QuestCompleted(id: UInt64, winner: Address, reward: UFix64)
@@ -188,9 +188,9 @@ access(all) contract QuestManager {
     
     access(all) resource Manager {
         
-        access(all) fun createQuest() {
+        access(all) fun createQuest(level: UInt8, rarity: String, enemies:{String: UInt64}): UInt64{
 
-            let mgrRef = QuestManager.account.capabilities.borrow<&QuestManager.Manager>(/public/QuestManager)
+            let mgrRef = QuestManager.account.storage.borrow<&QuestManager.Manager>(from: /storage/QuestManager)
                 ?? panic("Manager resource not found")
             
             // now call the method on the Manager resource reference
@@ -202,7 +202,7 @@ access(all) contract QuestManager {
             let now: UFix64 = getCurrentBlock().timestamp
             let duration: UFix64 = QuestManager.RARITY_DURATIONS[rarity] ?? panic("No duration")
             let expiresAt: UFix64 = now + duration
-            let enemies: {String: UInt64} = QuestManager.generateEnemies(level: level, rarity: rarity)
+           // let enemies: {String: UInt64} = QuestManager.generateEnemies(level: level, rarity: rarity)
 
             let id = QuestManager.nextQuestID
             QuestManager.nextQuestID = QuestManager.nextQuestID + 1
@@ -229,8 +229,8 @@ access(all) contract QuestManager {
             q.markActive()
             //let q <- create Quest( ... )
             QuestManager.quests[id] <-! q  // store the resource in contract pool
-            emit QuestCreated(id: id, level: level, rarity: rarity, expiresAt: expiresAt)
-
+            emit QuestCreated(id: id, level: level, rarity: rarity, enemies: enemies ,expiresAt: expiresAt)
+            return id
         }
 
         access(all) fun canCreateQuest(level: UInt8, rarity: String): Bool {
@@ -287,7 +287,7 @@ access(all) contract QuestManager {
         }
 
 
-        access(all) fun completeQuest(signer: auth(SaveValue, BorrowValue) &Account, questID: UInt64, playerLevel: UInt8, enemies_defeated: {String: UInt64}) {
+        access(all) fun completeQuest(signer: auth(SaveValue, BorrowValue) &Account, questID: UInt64, playerLevel: UInt8, enemies_defeated: {String: UInt64}, variabilityFactor: UFix64) {
             let collectionRef = signer.capabilities.borrow<&QuestCollection>(QuestManager.QuestCollectionPublicPath)
                                 ?? panic("No QuestCollection for signer")
             let qRef = collectionRef.borrowQuest(id: questID)
@@ -336,13 +336,13 @@ access(all) contract QuestManager {
             let receiverAddress: Address = signer.address
             let randomRange: [UInt64] = [0, 5, 10, 15, 20]
             let randomSign: [UInt64] = [0, 1]
-            var vrfOutput: UFix64 = UFix64(QuestManager.pickRandomValue(values: randomRange))
-            let vrfsignoutput: UInt64 = QuestManager.pickRandomValue(values: randomSign)
-            var factor: Int = 1
-            if vrfsignoutput == 0 {
-                factor = Int(vrfOutput) * -1
-            }
-            let variabilityFactor: UFix64 = (UFix64(factor) * 0.01) + 1.0
+            // var vrfOutput: UFix64 = UFix64(QuestManager.pickRandomValue(values: randomRange))
+            // let vrfsignoutput: UInt64 = QuestManager.pickRandomValue(values: randomSign)
+            // var factor: Int = 1
+            // if vrfsignoutput == 0 {
+            //     factor = Int(vrfOutput) * -1
+            // }
+            // let variabilityFactor: UFix64 = (UFix64(factor) * 0.01) + 1.0
 
             var reward: UFix64 = baseValue * UFix64(qRef.level) * UFix64(QuestManager.RARITY_MULTIPLIER[qRef.rarity] ?? 1.0) * variabilityFactor
 
@@ -377,7 +377,6 @@ access(all) contract QuestManager {
             emit QuestCompleted(id: questID, winner: signer.address, reward: reward)
         }
 
-        //yahan madarchod scehduled transaction lagra hai 😭
         access(all) fun expireParticipantIfNeeded(player: Address, questID: UInt64) {
             let pathStr = "/public/QuestParticipation_".concat(questID.toString())
             let partRef = getAccount(player).capabilities.borrow<&{QuestManager.QuestParticipationManagerAccess}>(PublicPath(identifier: pathStr)!)!
@@ -436,68 +435,73 @@ access(all) contract QuestManager {
 
 
 
-    access(all) fun generateEnemies(level: UInt8, rarity: String): {String: UInt64} {
-        let numEnemyTypes = self.RARITY_ENEMY_COUNT[rarity] ?? panic("Unknown rarity")
-        let rarityFactor = self.RARITY_MULTIPLIER[rarity] ?? panic("Unknown rarity multiplier")
-        let totalWeight: UFix64 = UFix64(level) * UFix64(rarityFactor) * 100.0
+    //access(all) fun generateEnemies(level: UInt8, rarity: String): {String: UInt64} {
+    //    let numEnemyTypes = self.RARITY_ENEMY_COUNT[rarity] ?? panic("Unknown rarity")
+    //    let rarityFactor = self.RARITY_MULTIPLIER[rarity] ?? panic("Unknown rarity multiplier")
+    //    let totalWeight: UFix64 = UFix64(level) * UFix64(rarityFactor) * 100.0
+//
+    //    
+    //    let enemiesForQuest = [
+    //        self.ENEMIES[numEnemyTypes[0]],
+    //        self.ENEMIES[numEnemyTypes[1]]
+    //    ]
+//
+    //    var remainingWeight: UFix64 = totalWeight
+    //    var finalEnemies: {String: UInt64} = {}
+//
+    //    //initially number on enemies calculated will be in UFix64 we will somehow have to convert them to UInt64
+    //    let enemy_1 = enemiesForQuest[0]
+    //    let weight_enemy1 = self.ENEMY_WEIGHTS[enemy_1]!
+    //    var maxCount: UFix64 = 1.0
+//
+    //    maxCount = remainingWeight / UFix64(weight_enemy1)
+//
+    //    let range1: [UInt64] = []
+    //    var i: UFix64 = 0.0
+    //    while i <= UFix64(maxCount) {
+    //        range1.append(UInt64(i))
+    //        i = i + 1.0
+    //    }
+    //    let count1 = UFix64(QuestManager.pickRandomValue(values: range1))
+//
+//
+    //    //let count1 = UInt64(QuestManager.pickRandomValue(values: Array(0...Int(maxCount))))
+//
+    //    remainingWeight = remainingWeight - (UFix64(weight_enemy1) * UFix64(count1))
+    //    
+    //    
+    //    let enemy_2 = enemiesForQuest[1]
+    //    let weight_enemy2 = self.ENEMY_WEIGHTS[enemy_2]!
+    //    maxCount = remainingWeight / UFix64(weight_enemy2)
+//
+    //    let range2: [UInt64] = []
+    //    i = 0.0
+    //    while i <= UFix64(maxCount) {
+    //        range2.append(UInt64(i))
+    //        i = i + 1.0
+    //    }
+    //    let count2 = QuestManager.pickRandomValue(values: range2)
+//
+    //    //let count2 = UInt64(QuestManager.pickRandomValue(values: Array(0...Int(maxCount))))
+    //    finalEnemies[enemy_1] = UInt64(count1)
+    //    finalEnemies[enemy_2] = UInt64(count2)
+    //    //remainingWeight = remainingWeight - (weight * count)
+//
+    //    return finalEnemies
+    //}
 
-        
-        let enemiesForQuest = [
-            self.ENEMIES[numEnemyTypes[0]],
-            self.ENEMIES[numEnemyTypes[1]]
-        ]
 
-        var remainingWeight: UFix64 = totalWeight
-        var finalEnemies: {String: UInt64} = {}
-
-        //initially number on enemies calculated will be in UFix64 we will somehow have to convert them to UInt64
-        let enemy_1 = enemiesForQuest[0]
-        let weight_enemy1 = self.ENEMY_WEIGHTS[enemy_1]!
-        var maxCount: UFix64 = 1.0
-
-        maxCount = remainingWeight / UFix64(weight_enemy1)
-
-        let range1: [UInt64] = []
-        var i: UFix64 = 0.0
-        while i <= UFix64(maxCount) {
-            range1.append(UInt64(i))
-            i = i + 1.0
-        }
-        let count1 = UFix64(QuestManager.pickRandomValue(values: range1))
-
-
-        //let count1 = UInt64(QuestManager.pickRandomValue(values: Array(0...Int(maxCount))))
-
-        remainingWeight = remainingWeight - (UFix64(weight_enemy1) * UFix64(count1))
-        
-        
-        let enemy_2 = enemiesForQuest[1]
-        let weight_enemy2 = self.ENEMY_WEIGHTS[enemy_2]!
-        maxCount = remainingWeight / UFix64(weight_enemy2)
-
-        let range2: [UInt64] = []
-        i = 0.0
-        while i <= UFix64(maxCount) {
-            range2.append(UInt64(i))
-            i = i + 1.0
-        }
-        let count2 = QuestManager.pickRandomValue(values: range2)
-
-        //let count2 = UInt64(QuestManager.pickRandomValue(values: Array(0...Int(maxCount))))
-        finalEnemies[enemy_1] = UInt64(count1)
-        finalEnemies[enemy_2] = UInt64(count2)
-        //remainingWeight = remainingWeight - (weight * count)
-
-        return finalEnemies
-    }
-
-
-    access(all) fun pickRandomValue(values: [UInt64]): UInt64 {
-        pre { values.length > 0: "Values array cannot be empty" }
-        let receipt <- RandomPicker.commit(values: values)
-        let result: UInt64 = RandomPicker.reveal(receipt: <-receipt)
-        return result
-    }
+    //access(all) fun pickRandomValue(values: [UInt64]): {
+    //    pre { values.length > 0: "Values array cannot be empty" }
+    //    let receipt <- RandomPicker.commit(values: values)
+//
+    //    let result: UInt64 = RandomPicker.reveal(receipt: <-receipt)
+    //    return result
+    //}
+//
+    //access(all) fun returnRandomValue(){
+    //    
+    //}
 
     //access(all) fun pickRandomString(values: [String]): String {
     //    pre { values.length > 0: "Values array cannot be empty" }
@@ -627,7 +631,7 @@ access(all) contract QuestManager {
 
         self.RARITY_MULTIPLIER = {
             "S": 10,
-            "A": 7,
+            "A": 6,
             "B": 3,
             "C": 1
         }
@@ -654,92 +658,3 @@ access(all) contract QuestManager {
     }
 }
 
-
-        //access(all) fun expireQuestForPlayer(playerAcct: AuthAccount, questID: UInt64) {
-        //    let collectionRef = playerAcct.borrow<&QuestCollection>(from: QuestManager.QuestCollectionStoragePath)
-        //        ?? panic("Player has no QuestCollection")
-//
-        //    let questRef = collectionRef.borrowQuest(questID)
-        //    if questRef == nil { return } 
-//
-        //    let now = getCurrentBlock().timestamp
-        //    if questRef!.isExpired(now) && questRef!.status == QuestManager.STATUS_ACTIVE {
-        //        // Remove quest from just this player
-        //        let quest <- collectionRef.withdraw(withdrawID: questID)
-//
-        //        // Optionally destroy the resource or just mark failed for the user
-        //        quest.markFailed()  // marks as failed for this user
-        //        destroy quest  // completely frees the resource from this player's collection
-//
-        //        emit QuestFailed(id: questID, player: playerAcct.address, reason: "Expired for player")
-        //    }
-        //}
-
-
- //access(all) fun createAndAssignQuestToCreator(
-        //    signer: AuthAccount,
-        //    level: UInt8,
-        //    rarity: String,
-        //    enemies: [String],
-        //    difficulty: [UInt8],
-        //    durationIfCreatedNow: UFix64?
-        //) {
-        //    if signer.borrow<&QuestCollection>(from: QuestManager.QuestCollectionStoragePath) == nil {
-        //        signer.save(<- QuestManager.createEmptyQuestCollection(), to: QuestManager.QuestCollectionStoragePath)
-        //        signer.link<&QuestCollection{PublicQuestCollection}>(QuestManager.QuestCollectionPublicPath, target: QuestManager.QuestCollectionStoragePath)
-        //    }
-//
-        //    let q <- self.createQuest(level: level, rarity: rarity, enemies: enemies, difficulty: difficulty, durationIfCreatedNow: durationIfCreatedNow)
-        //    let collectionRef = signer.borrow<&QuestCollection>(from: QuestManager.QuestCollectionStoragePath) 
-        //                        ?? panic("Cannot borrow creator's QuestCollection")
-        //    collectionRef.deposit(token: <- q)
-        //}
-
-        //access(all) fun assignQuestToPlayer(quest: @Quest, playerAcct: AuthAccount) {
-        //    if playerAcct.borrow<&QuestCollection>(from: QuestManager.QuestCollectionStoragePath) == nil {
-        //        playerAcct.save(<- QuestManager.createEmptyQuestCollection(), to: QuestManager.QuestCollectionStoragePath)
-        //        playerAcct.link<&QuestCollection{PublicQuestCollection}>(
-        //            QuestManager.QuestCollectionPublicPath, 
-        //            target: QuestManager.QuestCollectionStoragePath
-        //        )
-        //    }
-//
-        //    let collectionRef = playerAcct
-        //        .borrow<&QuestCollection>(from: QuestManager.QuestCollectionStoragePath)
-        //        ?? panic("Cannot borrow player's QuestCollection")
-//
-        //    let currentQuestCount = collectionRef.getIDs().length
-        //    if currentQuestCount >= 5 {
-        //        destroy quest  
-        //        panic("Player already has the maximum of 5 quests.")
-        //    }
-//
-        //    let id = quest.id
-        //    collectionRef.deposit(token: <- quest)
-//
-        //    emit QuestAssigned(id: id, player: playerAcct.address)
-        //}
-//
-//
-        ////todo -> get the player level from HeroNFT
-        //access(all) fun acceptQuest(signer: AuthAccount, questID: UInt64, playerLevel: UInt8) {
-        //    let collectionRef = signer.borrow<&QuestCollection>(from: QuestManager.QuestCollectionStoragePath)
-        //                        ?? panic("No QuestCollection for signer")
-        //    let qRef = collectionRef.borrowQuest(questID)
-        //                ?? panic("Quest not found in collection")
-//
-        //    // level check
-        //    let qLevel = qRef.level
-        //    if qLevel > playerLevel {
-        //        if qLevel - playerLevel > 1 {
-        //            panic("Player level too low for this quest")
-        //        }
-        //    } else {
-        //        if playerLevel - qLevel > 1 {
-        //            panic("Player level too high for this quest")
-        //        }
-        //    }
-//
-        //    qRef.accept(signer.address)
-        //    emit QuestAccepted(id: questID, player: signer.address)
-        //}

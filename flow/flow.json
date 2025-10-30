@@ -202,6 +202,13 @@
 				"testnet": "c6e616f1e50fcfab"
 			}
 		},
+		"FlowTransactionSchedulerUtils": {
+			"source": "cadence/contracts/FlowTransactionSchedulerUtils.cdc",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"testnet": "c6e616f1e50fcfab"
+			}
+		},
 		"QuestTransactionQuestHandler": {
 			"source": "cadence/contracts/QuestTransactionQuestHandler.cdc",
 			"aliases": {
@@ -771,7 +778,8 @@
 				},
 				"AuctionCallbackHandler",
 				"QuestTransactionQuestHandler",
-				"QuestTransactionUserHandler"
+				"QuestTransactionUserHandler",
+				"FlowTransactionSchedulerUtils"
 				
 			]
 		},
